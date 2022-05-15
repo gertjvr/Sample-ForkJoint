@@ -138,12 +138,12 @@ public class Startup
                 });
         });
             
-        services.AddDbContext<ForkJointSagaDbContext>(builder =>
-            builder.UseSqlServer(GetConnectionString(), m =>
-            {
-                m.MigrationsAssembly(Assembly.GetExecutingAssembly().GetName().Name);
-                m.MigrationsHistoryTable($"__{nameof(ForkJointSagaDbContext)}");
-            }));
+        // services.AddDbContext<ForkJointSagaDbContext>(builder =>
+        //     builder.UseSqlServer(GetConnectionString(), m =>
+        //     {
+        //         m.MigrationsAssembly(Assembly.GetExecutingAssembly().GetName().Name);
+        //         m.MigrationsHistoryTable($"__{nameof(ForkJointSagaDbContext)}");
+        //     }));
 
         services.AddMassTransit(x =>
         {
@@ -151,12 +151,19 @@ public class Startup
 
             x.AddDelayedMessageScheduler();
 
-            x.SetEntityFrameworkSagaRepositoryProvider(r =>
+            // x.SetEntityFrameworkSagaRepositoryProvider(r =>
+            // {
+            //     r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
+            //     r.LockStatementProvider = new SqlServerLockStatementProvider();
+            //
+            //     r.ExistingDbContext<ForkJointSagaDbContext>();
+            // });
+            
+            x.SetCosmosSagaRepositoryProvider(r =>
             {
-                r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
-                r.LockStatementProvider = new SqlServerLockStatementProvider();
+                r.ConfigureEmulator();
 
-                r.ExistingDbContext<ForkJointSagaDbContext>();
+                r.DatabaseId = "ForkJoint";
             });
 
             x.AddConsumersFromNamespaceContaining<CookOnionRingsConsumer>();
@@ -166,12 +173,19 @@ public class Startup
             x.AddFuturesFromNamespaceContaining<OrderFuture>();
 
             x.AddSagaRepository<FutureState>()
-                .EntityFrameworkRepository(r =>
+                // .EntityFrameworkRepository(r =>
+                // {
+                //     r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
+                //     r.LockStatementProvider = new SqlServerLockStatementProvider();
+                //
+                //     r.ExistingDbContext<ForkJointSagaDbContext>();
+                // });
+                .CosmosRepository(r =>
                 {
-                    r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
-                    r.LockStatementProvider = new SqlServerLockStatementProvider();
-
-                    r.ExistingDbContext<ForkJointSagaDbContext>();
+                    r.ConfigureEmulator();
+                    
+                    r.DatabaseId = "ForkJoint";
+                    r.CollectionId = "FutureState";
                 });
 
             x.UsingRabbitMq((context, cfg) =>
