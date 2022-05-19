@@ -1,14 +1,9 @@
-using OpenTelemetry.Exporter;
-using OpenTelemetry.Metrics;
-
 namespace ForkJoint.Api;
 
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
-using Components;
 using Components.Activities;
 using Components.Consumers;
 using Components.Futures;
@@ -17,15 +12,15 @@ using Contracts;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
 using MassTransit;
-using MassTransit.EntityFrameworkCoreIntegration;
 using Microsoft.ApplicationInsights.DependencyCollector;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -137,31 +132,19 @@ public class Startup
                     };
                 });
         });
-            
-        // services.AddDbContext<ForkJointSagaDbContext>(builder =>
-        //     builder.UseSqlServer(GetConnectionString(), m =>
-        //     {
-        //         m.MigrationsAssembly(Assembly.GetExecutingAssembly().GetName().Name);
-        //         m.MigrationsHistoryTable($"__{nameof(ForkJointSagaDbContext)}");
-        //     }));
 
+        var connectionString = GetConnectionString();
+        
         services.AddMassTransit(x =>
         {
             x.ApplyCustomMassTransitConfiguration();
 
-            x.AddDelayedMessageScheduler();
-
-            // x.SetEntityFrameworkSagaRepositoryProvider(r =>
-            // {
-            //     r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
-            //     r.LockStatementProvider = new SqlServerLockStatementProvider();
-            //
-            //     r.ExistingDbContext<ForkJointSagaDbContext>();
-            // });
+            x.AddServiceBusMessageScheduler();
             
             x.SetCosmosSagaRepositoryProvider(r =>
             {
-                r.ConfigureEmulator();
+                r.EndpointUri = connectionString.EndpointUri;
+                r.Key = connectionString.Key;
 
                 r.DatabaseId = "ForkJoint";
             });
@@ -173,33 +156,26 @@ public class Startup
             x.AddFuturesFromNamespaceContaining<OrderFuture>();
 
             x.AddSagaRepository<FutureState>()
-                // .EntityFrameworkRepository(r =>
-                // {
-                //     r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
-                //     r.LockStatementProvider = new SqlServerLockStatementProvider();
-                //
-                //     r.ExistingDbContext<ForkJointSagaDbContext>();
-                // });
                 .CosmosRepository(r =>
                 {
-                    r.ConfigureEmulator();
+                    r.EndpointUri = connectionString.EndpointUri;
+                    r.Key = connectionString.Key;
                     
                     r.DatabaseId = "ForkJoint";
                     r.CollectionId = "FutureState";
                 });
-
-            x.UsingRabbitMq((context, cfg) =>
+            
+            x.UsingAzureServiceBus((context, cfg) =>
             {
                 cfg.AutoStart = true;
                 
                 cfg.UseInstrumentation();
-
+                
                 cfg.ApplyCustomBusConfiguration();
+                
+                cfg.Host(Configuration["ConnectionStrings:ServiceBus"]);
 
-                if (IsRunningInContainer)
-                    cfg.Host("rabbitmq");
-
-                cfg.UseDelayedMessageScheduler();
+                cfg.UseServiceBusMessageScheduler();
 
                 cfg.ConfigureEndpoints(context);
             });
@@ -216,14 +192,25 @@ public class Startup
         });
     }
 
-    string GetConnectionString()
+    (string EndpointUri, string Key)  GetConnectionString()
     {
         var connectionString = Configuration.GetConnectionString("ForkJoint");
 
         if (IsRunningInContainer)
-            connectionString = connectionString.Replace("localhost", "mssql");
+            connectionString = connectionString.Replace("localhost", "cosmosdb");
+        
+        var parts = connectionString.Split(";", StringSplitOptions.RemoveEmptyEntries)
+            .Select(x =>
+            {
+                var p = x.IndexOf("=", StringComparison.InvariantCultureIgnoreCase);
+                var key = x.Substring(0, p);
+                var value = x.Substring(p + 1);
 
-        return connectionString;
+                return (key, value);
+            })
+            .ToDictionary(x => x.key, x => x.value);
+
+        return (parts["AccountEndpoint"], parts["AccountKey"]);
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

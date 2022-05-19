@@ -11,20 +11,18 @@ x-loki-logging: &loki-logging
     max-file: 5
 
 services:
-  rabbitmq:
-    image: masstransit/rabbitmq:latest
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-      - "15692:15692"
-  
-  mssql:
-    image: "mcr.microsoft.com/mssql/server:2017-latest"
+  cosmosdb: 
+    image: "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator"
     environment:
-      - "ACCEPT_EULA=Y"
-      - "SA_PASSWORD=Password12!"
+      - "AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10" 
+      - "AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true" 
+      - "AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE=$ipaddr"
     ports:
-      - 1433:1433
+    - "8081:8081" 
+    - "10251:10251" 
+    - "10252:10252" 
+    - "10253:10253" 
+    - "10254:10254"
   
   seq:
     image: datalust/seq:latest

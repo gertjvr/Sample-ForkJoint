@@ -15,8 +15,8 @@ public class BurgerItineraryPlanner :
 
     public BurgerItineraryPlanner(IEndpointNameFormatter formatter)
     {
-        _grillAddress = new Uri($"exchange:{formatter.ExecuteActivity<GrillBurgerActivity, GrillBurgerArguments>()}");
-        _dressAddress = new Uri($"exchange:{formatter.ExecuteActivity<DressBurgerActivity, DressBurgerArguments>()}");
+        _grillAddress = new Uri($"queue:{formatter.ExecuteActivity<GrillBurgerActivity, GrillBurgerArguments>()}");
+        _dressAddress = new Uri($"queue:{formatter.ExecuteActivity<DressBurgerActivity, DressBurgerArguments>()}");
     }
 
     public async Task PlanItinerary(BehaviorContext<FutureState, OrderBurger> context, IItineraryBuilder builder)

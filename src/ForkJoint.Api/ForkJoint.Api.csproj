@@ -6,11 +6,11 @@
 
   <ItemGroup>
     <PackageReference Include="Destructurama.Attributed" Version="3.0.0" />
-    <PackageReference Include="MassTransit.Analyzers" Version="8.0.3-develop.448" />
-    <PackageReference Include="MassTransit.Azure.Cosmos" Version="8.0.3-develop.448" />
-    <PackageReference Include="MassTransit.EntityFrameworkCore" Version="8.0.3-develop.448" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.0.3-develop.448" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.16.0" />
+    <PackageReference Include="MassTransit.Analyzers" Version="8.0.3-develop.455" />
+    <PackageReference Include="MassTransit.Azure.Cosmos" Version="8.0.3-develop.455" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="8.0.3-develop.455" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.20.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -24,6 +24,7 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9.3" />
     <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.0.0-rc9.3" />
     <PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.2" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
     <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
     <PackageReference Include="Serilog.Enrichers.Span" Version="2.3.0" />
